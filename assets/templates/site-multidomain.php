@@ -26,7 +26,7 @@
 
 		<h3><?php _e( 'CiviCRM Domain Information', 'civicrm-admin-utilities' ); ?></h3>
 
-		<?php /* ?><p><?php _e( 'Create or edit the CiviCRM Domain here.', 'civicrm-admin-utilities' ); ?></p><?php */ ?>
+		<p><?php _e( 'Create or edit the CiviCRM Domain for this site here.', 'civicrm-admin-utilities' ); ?></p>
 
 		<table class="form-table">
 
@@ -37,6 +37,20 @@
 				</td>
 			</tr>
 
+		</table>
+
+		<div class="cau-domain-edit">
+
+			<p>
+				<select class="cau_domain_select" name="cau_domain_select">
+					<option value=""><?php _e( 'Choose an existing Domain for this Site', 'civicrm-admin-utilities' ); ?></option>
+				</select>
+			</p>
+
+		</div>
+
+		<table class="form-table">
+
 			<tr>
 				<th scope="row"><?php _e( 'Domain Group', 'civicrm-admin-utilities' ); ?></th>
 				<td>
@@ -44,8 +58,22 @@
 				</td>
 			</tr>
 
+		</table>
+
+		<div class="cau-domain-group-edit">
+
+			<p>
+				<select class="cau_domain_group_select" name="cau_domain_group_select">
+					<option value=""><?php _e( 'Choose an existing Group for this Domain', 'civicrm-admin-utilities' ); ?></option>
+				</select>
+			</p>
+
+		</div>
+
+		<table class="form-table">
+
 			<tr>
-				<th scope="row"><?php _e( 'Domain Org', 'civicrm-admin-utilities' ); ?></th>
+				<th scope="row"><?php _e( 'Domain Organisation', 'civicrm-admin-utilities' ); ?></th>
 				<td>
 					<p><?php echo sprintf( __( '%1$s (ID: %2$d)', 'civicrm-admin-utilities' ), $domain_org_name, $domain_org_id ); ?></p>
 				</td>
@@ -53,13 +81,22 @@
 
 		</table>
 
-		<?php /* ?><p class="submit">
-			<input class="button-primary" type="submit" id="civicrm_admin_utilities_multidomain_submit" name="civicrm_admin_utilities_multidomain_submit" value="<?php _e( 'Save Changes', 'civicrm-admin-utilities' ); ?>" />
-		</p><?php */ ?>
+		<div class="cau-domain-org-edit">
+
+			<p>
+				<select class="cau_domain_org_select" name="cau_domain_org_select">
+					<option value=""><?php _e( 'Choose an existing Organisation for this Domain', 'civicrm-admin-utilities' ); ?></option>
+				</select>
+			</p>
+
+		</div>
+
+		<div class="cau-domain-submit">
+			<p class="submit">
+				<input class="button-primary" type="submit" id="civicrm_admin_utilities_multidomain_submit" name="civicrm_admin_utilities_multidomain_submit" value="<?php _e( 'Save Changes', 'civicrm-admin-utilities' ); ?>" />
+			</p>
+		</div>
 
 	</form>
 
 </div><!-- /.wrap -->
-
-
-

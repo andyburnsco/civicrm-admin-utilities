@@ -72,6 +72,15 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		// Add Domain subpage to Single Site Settings menu.
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 
+		// Add Domains AJAX handler.
+		add_action( 'wp_ajax_cau_domains_get', array( $this, 'domains_get' ) );
+
+		// Add Domain Groups AJAX handler.
+		add_action( 'wp_ajax_cau_domain_groups_get', array( $this, 'domain_groups_get' ) );
+
+		// Add Domain Orgs AJAX handler.
+		add_action( 'wp_ajax_cau_domain_orgs_get', array( $this, 'domain_orgs_get' ) );
+
 	}
 
 
@@ -118,8 +127,8 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		add_action( 'admin_head-' . $this->multidomain_page, array( $this, 'admin_head' ), 50 );
 
 		// Add scripts and styles.
-		//add_action( 'admin_print_scripts-' . $this->multidomain_page, array( $this, 'page_multidomain_js' ) );
-		//add_action( 'admin_print_styles-' . $this->multidomain_page, array( $this, 'page_multidomain_css' ) );
+		add_action( 'admin_print_scripts-' . $this->multidomain_page, array( $this, 'page_multidomain_js' ) );
+		add_action( 'admin_print_styles-' . $this->multidomain_page, array( $this, 'page_multidomain_css' ) );
 
 		// Try and update options.
 		$saved = $this->settings_update_router();
@@ -281,6 +290,80 @@ class CiviCRM_Admin_Utilities_Multidomain {
 
 		// Include template file.
 		include( CIVICRM_ADMIN_UTILITIES_PATH . 'assets/templates/site-multidomain.php' );
+
+	}
+
+
+
+	/**
+	 * Enqueue stylesheets for the Site Domain page.
+	 *
+	 * @since 0.6.2
+	 */
+	public function page_multidomain_css() {
+
+		// Register Select2 styles.
+		wp_register_style(
+			'cau_site_domain_select2_css',
+			set_url_scheme( 'http://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css' )
+		);
+
+		// Enqueue styles.
+		wp_enqueue_style( 'cau_site_domain_select2_css' );
+
+		// Add page-specific stylesheet.
+		wp_enqueue_style(
+			'cau_site_domain_css',
+			plugins_url( 'assets/css/civicrm-admin-utilities-site-multidomain.css', CIVICRM_ADMIN_UTILITIES_FILE ),
+			false,
+			CIVICRM_ADMIN_UTILITIES_VERSION, // version
+			'all' // media
+		);
+
+	}
+
+
+
+	/**
+	 * Enqueue Javascripts on the Site Domain page.
+	 *
+	 * @since 0.6.2
+	 */
+	public function page_multidomain_js() {
+
+		// Register Select2.
+		wp_register_script(
+			'cau_site_domain_select2_js',
+			set_url_scheme( 'http://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.min.js' ),
+			array( 'jquery' )
+		);
+
+		// Enqueue Select2 script.
+		wp_enqueue_script( 'cau_site_domain_select2_js' );
+
+		// Enqueue our Javascript plus dependencies.
+		wp_enqueue_script(
+			'cau_site_domain_js',
+			plugins_url( 'assets/js/civicrm-admin-utilities-site-multidomain.js', CIVICRM_ADMIN_UTILITIES_FILE ),
+			array( 'jquery', 'cau_site_domain_select2_js' ),
+			CIVICRM_ADMIN_UTILITIES_VERSION // version
+		);
+
+		// Localisation array.
+		$vars = array(
+			'localisation' => array(),
+			'settings' => array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				'blog_id' => get_current_blog_id(),
+			),
+		);
+
+		// Localise with WordPress function.
+		wp_localize_script(
+			'cau_site_domain_js',
+			'CAU_Site_Domain',
+			$vars
+		);
 
 	}
 
@@ -506,6 +589,186 @@ class CiviCRM_Admin_Utilities_Multidomain {
 	}
 
 
+
+	//##########################################################################
+
+
+
+	/**
+	 * Get the Domains registered in CiviCRM.
+	 *
+	 * @since 0.6.2
+	 */
+	public function domains_get() {
+
+		// Bail if CiviCRM is not active.
+		if ( ! $this->plugin->is_civicrm_initialised() ) return;
+
+		// Init return.
+		$json = array();
+
+		// Sanitise search input.
+		$search = isset( $_POST['s'] ) ? sanitize_text_field( $_POST['s'] ) : '';
+
+		// Get domains.
+		$domains = civicrm_api( 'domain', 'get', array(
+			'version' => 3,
+			'name' => array( 'LIKE' => '%' . $search . '%' ),
+		));
+
+		// Sanity check.
+		if ( ! empty( $domains['is_error'] ) AND $domains['is_error'] == 1 ) {
+			return;
+		}
+
+		// Loop through our domains.
+		foreach( $domains['values'] AS $domain ) {
+
+			// Add domain data to output array.
+			$json[] = array(
+				'id' => $domain['id'],
+				'name' => stripslashes( $domain['name'] ),
+				'description' => $domain['description'],
+			);
+
+		}
+
+		// Send data.
+		$this->send_data( $json );
+
+	}
+
+
+
+	/**
+	 * Get the Domain Groups registered in CiviCRM.
+	 *
+	 * @since 0.6.2
+	 */
+	public function domain_groups_get() {
+
+		// Bail if CiviCRM is not active.
+		if ( ! $this->plugin->is_civicrm_initialised() ) return;
+
+		// Init return.
+		$json = array();
+
+		// Sanitise search input.
+		$search = isset( $_POST['s'] ) ? sanitize_text_field( $_POST['s'] ) : '';
+
+		// Get domain groups.
+		$groups = civicrm_api( 'group', 'get', array(
+			'version' => 3,
+			'visibility' => 'User and User Admin Only',
+			'title' => array( 'LIKE' => '%' . $search . '%' ),
+		));
+
+		// Sanity check.
+		if ( ! empty( $groups['is_error'] ) AND $groups['is_error'] == 1 ) {
+			return;
+		}
+
+		// Loop through our groups.
+		foreach( $groups['values'] AS $group ) {
+
+			// Add group data to output array.
+			$json[] = array(
+				'id' => $group['id'],
+				'name' => stripslashes( $group['title'] ),
+				'description' => '',
+			);
+
+		}
+
+		// Send data.
+		$this->send_data( $json );
+
+	}
+
+
+
+	/**
+	 * Get the Domain Orgs registered in CiviCRM.
+	 *
+	 * @since 0.6.2
+	 */
+	public function domain_orgs_get() {
+
+		// Bail if CiviCRM is not active.
+		if ( ! $this->plugin->is_civicrm_initialised() ) return;
+
+		// Init return.
+		$json = array();
+
+		// Sanitise search input.
+		$search = isset( $_POST['s'] ) ? sanitize_text_field( $_POST['s'] ) : '';
+
+		// Get domain orgs.
+		$orgs = civicrm_api( 'contact', 'get', array(
+			'version' => 3,
+			'contact_type' => "Organization",
+			'organization_name' => array( 'LIKE' => '%' . $search . '%' ),
+		));
+
+		// Sanity check.
+		if ( ! empty( $orgs['is_error'] ) AND $orgs['is_error'] == 1 ) {
+			return;
+		}
+
+		// Loop through our orgs.
+		foreach( $orgs['values'] AS $org ) {
+
+			// Add org data to output array.
+			$json[] = array(
+				'id' => $org['contact_id'],
+				'name' => stripslashes( $org['display_name'] ),
+				'description' => '',
+			);
+
+		}
+
+		/*
+		//$e = new Exception;
+		//$trace = $e->getTraceAsString();
+		error_log( print_r( array(
+			'method' => __METHOD__,
+			'orgs' => $orgs,
+			'json' => $json,
+			//'backtrace' => $trace,
+		), true ) );
+		*/
+
+		// Send data.
+		$this->send_data( $json );
+
+	}
+
+
+
+	/**
+	 * Send JSON data to the browser.
+	 *
+	 * @since 0.6.2
+	 *
+	 * @param array $data The data to send.
+	 */
+	private function send_data( $data ) {
+
+		// Bail if this not an AJAX request.
+		if ( ! defined( 'DOING_AJAX' ) OR ! DOING_AJAX ) {
+			return;
+		}
+
+		// Set reasonable headers.
+		header('Content-type: text/plain');
+		header("Cache-Control: no-cache");
+		header("Expires: -1");
+
+		// Echo and die.
+		echo json_encode( $data );
+		exit();
+
+	}
 
 	//##########################################################################
 
