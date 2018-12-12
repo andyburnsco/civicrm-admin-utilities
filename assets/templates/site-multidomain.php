@@ -26,70 +26,133 @@
 
 		<h3><?php _e( 'CiviCRM Domain Information', 'civicrm-admin-utilities' ); ?></h3>
 
-		<p><?php _e( 'Create or edit the CiviCRM Domain for this site here.', 'civicrm-admin-utilities' ); ?></p>
+		<?php if ( ! $multisite ) : ?>
+			<div class="updated error">
+				<p><?php _e( 'You need to install and activate the CiviCRM Multisite extension.', 'civicrm-admin-utilities' ); ?></p>
+			</div>
+		<?php endif; ?>
 
-		<table class="form-table">
+		<ul>
 
-			<tr>
-				<th scope="row"><?php _e( 'Domain', 'civicrm-admin-utilities' ); ?></th>
-				<td>
-					<p><?php echo sprintf( __( '%1$s (ID: %2$d)', 'civicrm-admin-utilities' ), $domain_name, $domain_id ); ?></p>
-				</td>
-			</tr>
+			<li><?php echo sprintf(
+				__( 'The current domain for this site is: "%1$s" (ID: %2$s)', 'civicrm-admin-utilities' ),
+				'<span class="cau_domain_name">' . $domain['name'] . '</span>',
+				'<span class="cau_domain_id">' . $domain['id'] . '</span>'
+			); ?></li>
 
-		</table>
+			<li><?php echo sprintf(
+				__( 'The current domain group for this site is: "%1$s" (ID: %2$s)', 'civicrm-admin-utilities' ),
+				'<span class="cau_domain_group_name">' . $domain_group['name'] . '</span>',
+				'<span class="cau_domain_group_id">' . $domain_group['id'] . '</span>'
+			); ?></li>
+
+			<li><?php echo sprintf(
+				__( 'The current domain organisation for this site is: "%1$s" (ID: %2$s)', 'civicrm-admin-utilities' ),
+				'<span class="cau_domain_org_name">' . $domain_org['name'] . '</span>',
+				'<span class="cau_domain_org_id">' . $domain_org['id'] . '</span>'
+			); ?></li>
+
+		</ul>
+
+		<hr />
+
+		<h3><?php _e( 'Domain', 'civicrm-admin-utilities' ); ?></h3>
 
 		<div class="cau-domain-edit">
 
-			<p>
-				<select class="cau_domain_select" name="cau_domain_select">
-					<option value=""><?php _e( 'Choose an existing Domain for this Site', 'civicrm-admin-utilities' ); ?></option>
-				</select>
-			</p>
+			<table class="form-table">
+
+				<tr>
+					<th scope="row">
+						<label class="civicrm_admin_utilities_settings_label" for="cau_domain_select">
+							<?php _e( 'Choose a Domain', 'civicrm-admin-utilities' ); ?>
+						</label>
+					</th>
+
+					<td>
+						<select id="cau_domain_select" name="cau_domain_select">
+							<option value=""><?php _e( 'Select existing Domain', 'civicrm-admin-utilities' ); ?></option>
+						</select>
+					</td>
+				</tr>
+
+			</table>
 
 		</div>
 
-		<table class="form-table">
+		<div class="cau-domain-create">
 
-			<tr>
-				<th scope="row"><?php _e( 'Domain Group', 'civicrm-admin-utilities' ); ?></th>
-				<td>
-					<p><?php echo sprintf( __( '%1$s (ID: %2$d)', 'civicrm-admin-utilities' ), $domain_group_name, $domain_group_id ); ?></p>
-				</td>
-			</tr>
+			<table class="form-table">
 
-		</table>
+				<tr>
+					<th scope="row">
+						<label class="civicrm_admin_utilities_settings_label" for="cau_domain_name">
+							<?php _e( 'Domain Name', 'civicrm-admin-utilities' ); ?>
+						</label>
+					</th>
+
+					<td>
+						<input id="cau_domain_name" name="cau_domain_name" class="cau_text_input" value="" />
+					</td>
+				</tr>
+
+			</table>
+
+		</div>
+
+		<hr />
+
+		<h3><?php _e( 'Domain Group', 'civicrm-admin-utilities' ); ?></h3>
 
 		<div class="cau-domain-group-edit">
 
-			<p>
-				<select class="cau_domain_group_select" name="cau_domain_group_select">
-					<option value=""><?php _e( 'Choose an existing Group for this Domain', 'civicrm-admin-utilities' ); ?></option>
-				</select>
-			</p>
+			<table class="form-table">
+
+				<tr>
+					<th scope="row">
+						<label class="civicrm_admin_utilities_settings_label" for="cau_domain_group_select">
+							<?php _e( 'Choose a Domain Group', 'civicrm-admin-utilities' ); ?>
+						</label>
+					</th>
+
+					<td>
+						<select id="cau_domain_group_select" name="cau_domain_group_select">
+							<option value=""><?php _e( 'Select existing Group', 'civicrm-admin-utilities' ); ?></option>
+						</select>
+					</td>
+				</tr>
+
+			</table>
 
 		</div>
 
-		<table class="form-table">
+		<hr />
 
-			<tr>
-				<th scope="row"><?php _e( 'Domain Organisation', 'civicrm-admin-utilities' ); ?></th>
-				<td>
-					<p><?php echo sprintf( __( '%1$s (ID: %2$d)', 'civicrm-admin-utilities' ), $domain_org_name, $domain_org_id ); ?></p>
-				</td>
-			</tr>
-
-		</table>
+		<h3><?php _e( 'Domain Organisation', 'civicrm-admin-utilities' ); ?></h3>
 
 		<div class="cau-domain-org-edit">
 
-			<p>
-				<select class="cau_domain_org_select" name="cau_domain_org_select">
-					<option value=""><?php _e( 'Choose an existing Organisation for this Domain', 'civicrm-admin-utilities' ); ?></option>
-				</select>
-			</p>
+			<table class="form-table">
+
+				<tr>
+					<th scope="row">
+						<label class="civicrm_admin_utilities_settings_label" for="cau_domain_org_select">
+							<?php _e( 'Choose a Domain Organisation', 'civicrm-admin-utilities' ); ?>
+						</label>
+					</th>
+
+					<td>
+						<p><select id="cau_domain_org_select" name="cau_domain_org_select">
+							<option value=""><?php _e( 'Select existing Organisation', 'civicrm-admin-utilities' ); ?></option>
+						</select></p>
+					</td>
+				</tr>
+
+			</table>
 
 		</div>
+
+		<hr />
 
 		<div class="cau-domain-submit">
 			<p class="submit">

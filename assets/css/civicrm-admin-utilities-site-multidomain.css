@@ -14,3 +14,16 @@
 {
 	/* display: none; */
 }
+
+/* Give Select2 room to breathe */
+.select2-container
+{
+    min-width: 300px;
+}
+
+/* Give input element room to breathe */
+.cau_text_input
+{
+    min-width: 300px;
+}
+

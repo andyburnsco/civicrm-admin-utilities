@@ -25,9 +25,9 @@
 	$(document).ready( function() {
 
 		// Declare vars.
-		var domain = $('.cau_domain_select'),
-			group = $('.cau_domain_group_select'),
-			org = $('.cau_domain_org_select');
+		var domain = $('#cau_domain_select'),
+			group = $('#cau_domain_group_select'),
+			org = $('#cau_domain_org_select');
 
 		/**
 		 * Domain Group Select2 init.
