@@ -563,12 +563,6 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		// Get admin page URLs.
 		$urls = $this->plugin->single->page_get_urls();
 
-		// Check if "CiviCRM Multisite" extension is active.
-		$multisite = false;
-		if ( $this->plugin->is_extension_enabled( 'org.civicrm.multisite' ) ) {
-			$multisite = true;
-		}
-
 		// Get domain name.
 		$domain = $this->domain_get();
 
@@ -577,6 +571,22 @@ class CiviCRM_Admin_Utilities_Multidomain {
 
 		// Get domain org data.
 		$domain_org = $this->domain_org_get();
+
+		// Check if "CiviCRM Multisite" extension is active.
+		$multisite = false;
+		if ( $this->plugin->is_extension_enabled( 'org.civicrm.multisite' ) ) {
+			$multisite = true;
+		}
+
+		/*
+		// Check if "Multisite" is enabled for this Domain.
+		$enabled = civicrm_api( 'setting', 'getvalue', array(
+			'version' => 3,
+			'domain_id' => $domain['id'],
+			'name' => 'is_enabled',
+			'group' => 'Multi Site Preferences',
+		));
+		*/
 
 		// Include template file.
 		include( CIVICRM_ADMIN_UTILITIES_PATH . 'assets/templates/site-multidomain.php' );
@@ -814,7 +824,7 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			error_log( print_r( array(
 				'method' => __METHOD__,
 				'result' => $result,
-				//'backtrace' => $trace,
+				'backtrace' => $trace,
 			), true ) );
 		}
 
@@ -1303,8 +1313,11 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			return false;
 		}
 
+		// Get existing Domain Group data.
+		$domain_group = $this->domain_group_get();
+
 		// Check "domain_group_id" setting.
-		$result = civicrm_api( 'setting', 'getsingle', array(
+		$setting = civicrm_api( 'setting', 'getsingle', array(
 			'version' => 3,
 			'sequential' => 1,
 			'domain_id' => $domain['id'],
@@ -1312,18 +1325,81 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		));
 
 		// Skip the Setting if there's no change.
-		if ( ! empty( $result['domain_group_id'] ) AND $result['domain_group_id'] == $group_id ) {
+		if ( isset( $setting['domain_group_id'] ) AND $setting['domain_group_id'] !== $group_id ) {
+
+			// Set "domain_group_id" setting.
+			$result = civicrm_api( 'setting', 'create', array(
+				'version' => 3,
+				'domain_id' => $domain['id'],
+				'domain_group_id' => absint( $group_id ),
+			));
+
+			// Log if there's an error.
+			if ( isset( $result['is_error'] ) AND $result['is_error'] == '1' ) {
+				$e = new Exception;
+				$trace = $e->getTraceAsString();
+				error_log( print_r( array(
+					'method' => __METHOD__,
+					'result' => $result,
+					'backtrace' => $trace,
+				), true ) );
+			}
+
+		}
+
+		// Check if new Domain Group has a "GroupOrganization".
+		$result = civicrm_api( 'GroupOrganization', 'getsingle', array(
+			'version' => 3,
+			'group_id' => absint( $group_id ),
+			'organization_id' => $domain['contact_id'],
+		));
+
+		// If it doesn't have one.
+		if ( isset( $result['is_error'] ) AND $result['is_error'] == '1' ) {
+
+			// Create new "GroupOrganization" entry.
+			$result = civicrm_api( 'GroupOrganization', 'create', array(
+				'version' => 3,
+				'group_id' => absint( $group_id ),
+				'organization_id' => $domain['contact_id'],
+			));
+
+		}
+
+		// Bail if there wasn't a previous Domain Group.
+		if ( $domain_group['id'] === 0 ) {
 			return $group_id;
 		}
 
-		// Set "domain_group_id" setting.
-		$result = civicrm_api( 'setting', 'create', array(
+		// Get all "GroupOrganization" data for previous Domain Group.
+		$result = civicrm_api( 'GroupOrganization', 'get', array(
 			'version' => 3,
-			'domain_id' => $domain['id'],
-			'domain_group_id' => absint( $group_id ),
+			'sequential' => 1,
+			'group_id' => absint( $domain_group['id'] ),
 		));
 
-		// TODO: Do we need to update "GroupOrganization" linkage?
+		// If the previous Domain Group had more than one "GroupOrganization".
+		if ( isset( $result['count'] ) AND absint( $result['count'] ) > 1 ) {
+
+			// Init linkage ID.
+			$linkage_id = 0;
+
+			// Find the one that's tied to this Domain Org.
+			foreach( $result['values'] AS $linkage ) {
+				if ( $linkage['organization_id'] == $domain['contact_id'] ) {
+					$linkage_id = $linkage['id'];
+				}
+			}
+
+			// Remove it if we find it.
+			if ( $linkage_id !== 0 ) {
+				$result = civicrm_api( 'GroupOrganization', 'delete', array(
+					'version' => 3,
+					'id' => $linkage_id,
+				));
+			}
+
+		}
 
 		// --<
 		return $group_id;
