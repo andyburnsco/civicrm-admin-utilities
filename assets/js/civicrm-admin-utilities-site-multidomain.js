@@ -25,52 +25,8 @@
 	$(document).ready( function() {
 
 		// Declare vars.
-		var domain = $('#cau_domain_select'),
-			group = $('#cau_domain_group_select'),
+		var group = $('#cau_domain_group_select'),
 			org = $('#cau_domain_org_select');
-
-		/**
-		 * Domain Group Select2 init.
-		 *
-		 * @since 0.6.2
-		 */
-		domain.select2({
-
-			// AJAX action.
-			ajax: {
-				method: 'POST',
-				url: CAU_Site_Domain.settings.ajaxurl,
-				dataType: 'json',
-				delay: 250,
-				data: function( params ) {
-					return {
-						s: params.term, // Search term.
-						action: 'cau_domains_get',
-						page: params.page,
-						blog_id: CAU_Site_Domain.settings.blog_id
-					};
-				},
-				processResults: function( data, page ) {
-					// Parse the results into the format expected by Select2.
-					// Since we are using custom formatting functions, we do not
-					// need to alter the remote JSON data.
-					return {
-						results: data
-					};
-				},
-				cache: true
-			},
-
-			// Settings.
-			escapeMarkup: function( markup ) {
-				// Let our custom formatter do the work.
-				return markup;
-			},
-			minimumInputLength: 3,
-			templateResult: format_result,
-			templateSelection: format_response
-
-		});
 
 		/**
 		 * Domain Group Select2 init.
@@ -186,7 +142,9 @@
 
 		// Add group description, if available.
 		if (data.description) {
-			markup += '<div class="select2_results_description" style="font-size:.9em;line-height:1.4;">' + data.description + '</div>';
+			markup += '<div class="select2_results_description" style="font-size:.9em;line-height:1.4;">'
+						+ data.description +
+					'</div>';
 		}
 
 		// Close markup.

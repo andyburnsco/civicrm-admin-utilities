@@ -260,7 +260,7 @@ class CiviCRM_Admin_Utilities_Multidomain {
 
 		// Check if "CiviCRM Multisite" extension is active.
 		$multisite = false;
-		if ( $this->is_extension_enabled( 'org.civicrm.multisite' ) ) {
+		if ( $this->plugin->is_extension_enabled( 'org.civicrm.multisite' ) ) {
 			$multisite = true;
 		}
 
@@ -565,7 +565,7 @@ class CiviCRM_Admin_Utilities_Multidomain {
 
 		// Check if "CiviCRM Multisite" extension is active.
 		$multisite = false;
-		if ( $this->is_extension_enabled( 'org.civicrm.multisite' ) ) {
+		if ( $this->plugin->is_extension_enabled( 'org.civicrm.multisite' ) ) {
 			$multisite = true;
 		}
 
@@ -837,7 +837,15 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		// Check that we trust the source of the data.
 		check_admin_referer( 'civicrm_admin_utilities_multidomain_action', 'civicrm_admin_utilities_multidomain_nonce' );
 
-		// TODO: Functional procedure here.
+		// Sanitise inputs.
+		$domain_org_id = isset( $_POST['cau_domain_org_select'] ) ? absint( $_POST['cau_domain_org_select'] ) : '';
+		$domain_group_id = isset( $_POST['cau_domain_group_select'] ) ? absint( $_POST['cau_domain_group_select'] ) : '';
+
+		// Maybe set new Domain Org.
+		$this->domain_org_set( $domain_org_id );
+
+		// Maybe set new Domain Group.
+		$this->domain_group_set( $domain_group_id );
 
 		// --<
 		return true;
@@ -965,7 +973,7 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		if ( $domain_id === 0 ) {
 
 			// Get CiviCRM domain group ID from constant, if set.
-			$domain_group_id = defined( 'CIVICRM_DOMAIN_ID' ) ? CIVICRM_DOMAIN_ID : 0;
+			$domain_id = defined( 'CIVICRM_DOMAIN_ID' ) ? CIVICRM_DOMAIN_ID : 0;
 
 			// If this fails, get it from config.
 			if ( $domain_id === 0 ) {
@@ -986,14 +994,17 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			'id' => $domain_id,
 		));
 
-		// Assign error message or name depending on query success.
+		// Bail if there's an error.
 		if ( ! empty( $domain_info['is_error'] ) AND $domain_info['is_error'] == 1 ) {
 			$domain['name'] = $domain_info['error_message'];
-		} else {
-			$domain['id'] = $domain_id;
-			$domain['name'] = $domain_info['name'];
-			$domain['contact_id'] = $domain_info['contact_id'];
+			return $domain;
 		}
+
+		// Populate return array with the items we want.
+		$domain['id'] = $domain_id;
+		$domain['name'] = $domain_info['name'];
+		$domain['contact_id'] = $domain_info['contact_id'];
+		$domain['version'] = $domain_info['domain_version'];
 
 		// --<
 		return $domain;
@@ -1023,7 +1034,7 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		}
 
 		// Bail if "CiviCRM Multisite" extension is not active.
-		if ( ! $this->is_extension_enabled( 'org.civicrm.multisite' ) ) {
+		if ( ! $this->plugin->is_extension_enabled( 'org.civicrm.multisite' ) ) {
 			return __( 'CiviCRM Multisite extension must be enabled.', 'civicrm-admin-utilities' );
 		}
 
@@ -1104,7 +1115,7 @@ class CiviCRM_Admin_Utilities_Multidomain {
 
 
 	/**
-	 * Get the domain group data for a given ID.
+	 * Get the Domain Group data for a given ID.
 	 *
 	 * @since 0.5.4
 	 *
@@ -1125,35 +1136,13 @@ class CiviCRM_Admin_Utilities_Multidomain {
 		// If no parameter set,
 		if ( $domain_group_id === 0 ) {
 
-			// Get CiviCRM domain group ID from constant, if set.
-			$domain_group_id = defined( 'CIVICRM_DOMAIN_GROUP_ID' ) ? CIVICRM_DOMAIN_GROUP_ID : 0;
+			// Try and find the current Domain Group ID.
+			$domain_group_id = $this->domain_group_id_get();
 
-			// If this fails, get it from the domain org.
+			// Bail if we don't find one.
 			if ( $domain_group_id === 0 ) {
-
-				// Get domain org data.
-				$domain_org = $this->domain_org_get();
-
-				// Get domain group data.
-				$domain_group_data = civicrm_api( 'GroupOrganization', 'getsingle', array(
-					'version' => 3,
-					'sequential' => 1,
-					'organization_id' => $domain_org['id'],
-				));
-
-				// Parse results.
-				if ( ! empty( $domain_group_data['is_error'] ) AND $domain_group_data['is_error'] == 1 ) {
-					$domain_group_id = 0;
-				} else {
-					$domain_group_id = $domain_group_data['group_id'];
-				}
-
-				// Bail if we still don't have one.
-				if ( $domain_group_id === 0 ) {
-					$domain_group['name'] = __( 'Could not find a Domain Group ID.', 'civicrm-admin-utilities' );
-					return $domain_group;
-				}
-
+				$domain_group['name'] = __( 'Could not find a Domain Group ID.', 'civicrm-admin-utilities' );
+				return $domain_group;
 			}
 
 		}
@@ -1164,15 +1153,110 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			'id' => $domain_group_id,
 		));
 
+		// Bail if there's an error.
 		if ( ! empty( $domain_group_info['is_error'] ) AND $domain_group_info['is_error'] == 1 ) {
 			$domain_group['name'] = $domain_group_info['error_message'];
-		} else {
-			$domain_group['id'] = $domain_group_id;
-			$domain_group['name'] = $domain_group_info['title'];
+			return $domain_group;
 		}
+
+		// Populate return array with the items we want.
+		$domain_group['id'] = $domain_group_id;
+		$domain_group['name'] = $domain_group_info['title'];
 
 		// --<
 		return $domain_group;
+
+	}
+
+
+
+	/**
+	 * Get the current Domain Group ID.
+	 *
+	 * The priority for determining the ID of the Domain Group is as follows:
+	 *
+	 * 1) Check "domain_group_id" setting via API.
+	 * 2) Check for Group with the same name as the Domain. (Yes really)
+	 *
+	 * I'm not persuaded that (2) is good practice - it seems a very brittle
+	 * way of storing this relationship. However CiviCRM Core uses that as a
+	 * way to get the Group ID so it needs to remain here too. In conclusion,
+	 * therefore, only the "domain_group_id" setting should be trusted as the
+	 * source of the canonical Domain Group ID.
+	 *
+	 * The reason there is some commented-out code to look for a unique
+	 * "GroupOrganization" linkage via the API is that MultisiteDomain.create
+	 * makes such a link between the Domain Group and Domain Org. However it
+	 * is not a unique entry and is likely to be misleading.
+	 *
+	 * @see CRM_Core_BAO_Domain::getGroupId()
+	 *
+	 * @since 0.6.2
+	 *
+	 * @return int $domain_group_id The domain group ID, or 0 on failure.
+	 */
+	public function domain_group_id_get() {
+
+		// Set default return.
+		$domain_group_id = 0;
+
+		// Bail if CiviCRM is not active.
+		if ( ! $this->plugin->is_civicrm_initialised() ) {
+			return $domain_group_id;
+		}
+
+		// Get domain data.
+		$domain = $this->domain_get();
+
+		// Bail if we don't have a domain.
+		if ( $domain['id'] === 0 ) {
+			return $domain_group_id;
+		}
+
+		// Check "domain_group_id" setting.
+		$result = civicrm_api( 'setting', 'getsingle', array(
+			'version' => 3,
+			'sequential' => 1,
+			'domain_id' => $domain['id'],
+			'return' => 'domain_group_id',
+		));
+
+		// If we were successful, cast as integer and return the ID.
+		if ( ! empty( $result['domain_group_id'] ) AND $result['domain_group_id'] != '0' ) {
+			$domain_group_id = absint( $result['domain_group_id'] );
+			return $domain_group_id;
+		}
+
+		// Check for Group with the name of the Domain.
+		$result = civicrm_api( 'group', 'getsingle', array(
+			'version' => 3,
+			'sequential' => 1,
+			'title' => $domain['name'],
+		));
+
+		// If we were successful, cast as integer and return the ID.
+		if ( ! empty( $result['id'] ) ) {
+			$domain_group_id = absint( $result['id'] );
+			return $domain_group_id;
+		}
+
+		/*
+		// Get result from "GroupOrganization".
+		$result = civicrm_api( 'GroupOrganization', 'getsingle', array(
+			'version' => 3,
+			'sequential' => 1,
+			'organization_id' => $domain['contact_id'],
+		));
+
+		// If there is only a single linkage, cast as integer and return the ID.
+		if ( ! empty( $result['group_id'] ) ) {
+			$domain_group_id = absint( $result['group_id'] );
+			return $domain_group_id;
+		}
+		*/
+
+		// --<
+		return $domain_group_id;
 
 	}
 
@@ -1185,41 +1269,64 @@ class CiviCRM_Admin_Utilities_Multidomain {
 	 */
 	public function domain_group_create() {
 
+		// Nothing to see yet.
+
+	}
+
+
+
+	/**
+	 * Set a Group as a Domain Group.
+	 *
+	 * @since 0.6.2
+	 *
+	 * @param int $group_id The ID of the Group.
+	 * @return int|bool $group_id The ID of the Group, or false on failure.
+	 */
+	public function domain_group_set( $group_id = 0 ) {
+
 		// Bail if CiviCRM is not active.
-		if ( ! $this->plugin->is_civicrm_initialised() ) return;
-
-		// Init return.
-		$json = array();
-
-		// Sanitise search input.
-		$search = isset( $_POST['s'] ) ? sanitize_text_field( $_POST['s'] ) : '';
-
-		// Get domain groups.
-		$groups = civicrm_api( 'group', 'get', array(
-			'version' => 3,
-			'visibility' => 'User and User Admin Only',
-			'title' => array( 'LIKE' => '%' . $search . '%' ),
-		));
+		if ( ! $this->plugin->is_civicrm_initialised() ) {
+			return false;
+		}
 
 		// Sanity check.
-		if ( ! empty( $groups['is_error'] ) AND $groups['is_error'] == 1 ) {
-			return;
+		if ( $group_id === 0 OR ! is_numeric( $group_id ) ) {
+			return false;
 		}
 
-		// Loop through our groups.
-		foreach( $groups['values'] AS $group ) {
+		// Get domain data.
+		$domain = $this->domain_get();
 
-			// Add group data to output array.
-			$json[] = array(
-				'id' => $group['id'],
-				'name' => stripslashes( $group['title'] ),
-				'description' => '',
-			);
-
+		// Bail if we don't have a domain.
+		if ( $domain['id'] === 0 ) {
+			return false;
 		}
 
-		// Send data.
-		$this->send_data( $json );
+		// Check "domain_group_id" setting.
+		$result = civicrm_api( 'setting', 'getsingle', array(
+			'version' => 3,
+			'sequential' => 1,
+			'domain_id' => $domain['id'],
+			'return' => 'domain_group_id',
+		));
+
+		// Skip the Setting if there's no change.
+		if ( ! empty( $result['domain_group_id'] ) AND $result['domain_group_id'] == $group_id ) {
+			return $group_id;
+		}
+
+		// Set "domain_group_id" setting.
+		$result = civicrm_api( 'setting', 'create', array(
+			'version' => 3,
+			'domain_id' => $domain['id'],
+			'domain_group_id' => absint( $group_id ),
+		));
+
+		// TODO: Do we need to update "GroupOrganization" linkage?
+
+		// --<
+		return $group_id;
 
 	}
 
@@ -1324,13 +1431,15 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			'id' => $domain_org_id,
 		));
 
-		// Assign error message or name depending on query success.
+		// Bail if there's an error.
 		if ( ! empty( $domain_org_info['is_error'] ) AND $domain_org_info['is_error'] == 1 ) {
 			$domain_org['name'] = $domain_org_info['error_message'];
-		} else {
-			$domain_org['id'] = $domain_org_id;
-			$domain_org['name'] = $domain_org_info['display_name'];
+			return $domain_org;
 		}
+
+		// Populate return array with the items we want.
+		$domain_org['id'] = $domain_org_id;
+		$domain_org['name'] = $domain_org_info['display_name'];
 
 		// --<
 		return $domain_org;
@@ -1346,96 +1455,62 @@ class CiviCRM_Admin_Utilities_Multidomain {
 	 */
 	public function domain_org_create() {
 
-		// Bail if CiviCRM is not active.
-		if ( ! $this->plugin->is_civicrm_initialised() ) return;
-
-		// Init return.
-		$json = array();
-
-		// Sanitise search input.
-		$search = isset( $_POST['s'] ) ? sanitize_text_field( $_POST['s'] ) : '';
-
-		// Get domain orgs.
-		$orgs = civicrm_api( 'contact', 'get', array(
-			'version' => 3,
-			'contact_type' => "Organization",
-			'organization_name' => array( 'LIKE' => '%' . $search . '%' ),
-		));
-
-		// Sanity check.
-		if ( ! empty( $orgs['is_error'] ) AND $orgs['is_error'] == 1 ) {
-			return;
-		}
-
-		// Loop through our orgs.
-		foreach( $orgs['values'] AS $org ) {
-
-			// Add org data to output array.
-			$json[] = array(
-				'id' => $org['contact_id'],
-				'name' => stripslashes( $org['display_name'] ),
-				'description' => '',
-			);
-
-		}
-
-		// Send data.
-		$this->send_data( $json );
+		// Nothing to see yet.
 
 	}
 
 
 
-	//##########################################################################
-
-
-
 	/**
-	 * Check if a CiviCRM Extension is installed and active.
+	 * Set an Organisation as a Domain Organisation.
 	 *
 	 * @since 0.6.2
 	 *
-	 * @param str $full_name The full name of the extension.
-	 * @return bool $installed True if extension is installed, false otherwise.
+	 * @param int $org_id The ID of the Organisation.
+	 * @return int|bool $org_id The ID of the Organisation, or false on failure.
 	 */
-	public function is_extension_enabled( $full_name ) {
+	public function domain_org_set( $org_id = 0 ) {
 
 		// Bail if CiviCRM is not active.
 		if ( ! $this->plugin->is_civicrm_initialised() ) {
 			return false;
 		}
 
-		// Assume not installed.
-		$installed = false;
+		// Sanity check.
+		if ( $org_id === 0 OR ! is_numeric( $org_id ) ) {
+			return false;
+		}
 
-		// Query API for extension.
-		$result = civicrm_api( 'extension', 'get', array(
+		// Get domain data.
+		$domain = $this->domain_get();
+
+		// Bail if we don't have a domain.
+		if ( $domain['id'] === 0 ) {
+			return false;
+		}
+
+		// Bail if there's no change.
+		if ( $domain['contact_id'] == $org_id ) {
+			return $org_id;
+		}
+
+		// Update Domain.
+		$result = civicrm_api( 'domain', 'create', array(
 			'version' => 3,
-			'sequential' => 1,
-			'full_name' => $full_name,
+			'id' => $domain['id'],
+			'contact_id' => absint( $org_id ),
 		));
 
-		// Bail if there's an error.
-		if ( ! empty( $result['is_error'] ) AND $result['is_error'] == 1 ) {
-			return $installed;
-		}
-
-		// Bail if not found.
-		if ( empty( $result['values'] ) ) {
-			return $installed;
-		}
-
-		// Double check.
-		foreach( $result['values'] AS $extension ) {
-			if ( $extension['key'] == $full_name ) {
-				$installed = true;
-			}
-		}
+		// TODO: Do we need to reassign all groups to this Org via "GroupOrganization" API?
 
 		// --<
-		return $installed;
+		return $org_id;
 
 	}
+
+
+
+	//##########################################################################
 
 
 

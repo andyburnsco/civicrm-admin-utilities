@@ -50,7 +50,7 @@
 
 	<?php if ( $multisite ) : ?>
 
-	<hr />
+		<hr />
 
 		<form method="post" id="civicrm_admin_utilities_network_multidomain_form" action="<?php echo $this->page_submit_url_get(); ?>">
 
