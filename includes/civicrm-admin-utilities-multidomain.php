@@ -578,7 +578,6 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			$multisite = true;
 		}
 
-		/*
 		// Check if "Multisite" is enabled for this Domain.
 		$enabled = civicrm_api( 'setting', 'getvalue', array(
 			'version' => 3,
@@ -586,7 +585,9 @@ class CiviCRM_Admin_Utilities_Multidomain {
 			'name' => 'is_enabled',
 			'group' => 'Multi Site Preferences',
 		));
-		*/
+
+		// Get the "Multi Site Settings" page URL.
+		$multisite_url = $this->plugin->single->get_link( 'civicrm/admin/setting/preferences/multisite', 'reset=1' );
 
 		// Include template file.
 		include( CIVICRM_ADMIN_UTILITIES_PATH . 'assets/templates/site-multidomain.php' );

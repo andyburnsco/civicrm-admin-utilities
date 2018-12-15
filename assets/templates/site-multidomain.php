@@ -28,6 +28,12 @@
 		</div>
 	<?php endif; ?>
 
+	<?php if ( ! $enabled ) : ?>
+		<div class="notice notice-warning">
+			<p><?php echo sprintf( __( 'Multisite is not enabled on this CiviCRM Domain. Change <a href="%s">the setting in CiviCRM</a> to enable it.', 'civicrm-admin-utilities' ), $multisite_url ); ?></p>
+		</div>
+	<?php endif; ?>
+
 	<ul>
 
 		<li><?php echo sprintf(
