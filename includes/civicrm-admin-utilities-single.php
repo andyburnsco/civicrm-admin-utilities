@@ -1436,6 +1436,11 @@ class CiviCRM_Admin_Utilities_Single {
 			) );
 		}
 
+		// Make sure plugin file is included when outside admin.
+		if ( ! function_exists( 'menu_page_url' ) ) {
+			require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+		}
+
 		/**
 		 * Set capability but allow overrides.
 		 *
