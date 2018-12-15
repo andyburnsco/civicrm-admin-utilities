@@ -1436,11 +1436,6 @@ class CiviCRM_Admin_Utilities_Single {
 			) );
 		}
 
-		// Make sure plugin file is included when outside admin.
-		if ( ! function_exists( 'menu_page_url' ) ) {
-			require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
-		}
-
 		/**
 		 * Set capability but allow overrides.
 		 *
@@ -1458,7 +1453,7 @@ class CiviCRM_Admin_Utilities_Single {
 				'id' => 'cau-11',
 				'parent' => $id,
 				'title' => __( 'CiviCRM Admin Utilities', 'civicrm-admin-utilities' ),
-				'href' => menu_page_url( 'civicrm_admin_utilities_settings', false ),
+				'href' => admin_url( 'admin.php?page=civicrm_admin_utilities_settings' ),
 			) );
 		}
 
