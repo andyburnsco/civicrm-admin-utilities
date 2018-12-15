@@ -24,7 +24,7 @@
 
 	<?php if ( ! $multisite ) : ?>
 		<div class="updated error">
-			<p><?php _e( 'It is recommended that you install and activate the <a href="https://civicrm.org/extensions/multisite-permissioning" target="_blank">CiviCRM Multisite</a> extension to work with multiple Domains.', 'civicrm-admin-utilities' ); ?></p>
+			<p><?php _e( 'It is recommended that you install and activate the <a href="https://civicrm.org/extensions/multisite-permissioning" target="_blank">CiviCRM Multisite</a> extension to work with multiple Domains in CiviCRM.', 'civicrm-admin-utilities' ); ?></p>
 		</div>
 	<?php endif; ?>
 
