@@ -1774,13 +1774,15 @@ class CiviCRM_Admin_Utilities_Single {
 		) );
 
 		// Search.
-		$wp_admin_bar->add_node( array(
-			'id' => 'cau-2',
-			'parent' => $id,
-			'title' => __( 'Advanced Search', 'civicrm-admin-utilities' ),
-			'href' => $this->get_link( 'civicrm/contact/search/advanced', 'reset=1' ),
-		) );
-
+		if ( $this->check_permission( 'County Leader' ) ) {
+			$wp_admin_bar->add_node( array(
+				'id' => 'cau-2',
+				'parent' => $id,
+				'title' => __( 'Advanced Search', 'civicrm-admin-utilities' ),
+				'href' => $this->get_link( 'civicrm/contact/search/advanced', 'reset=1' ),
+			) );
+		}
+		
 		// Maybe hide "Manage Groups" menu item.
 		if ( $this->setting_get( 'admin_bar_groups', '0' ) == '1' ) {
 			add_filter( 'civicrm_admin_utilities_manage_groups_menu_item', '__return_false' );
@@ -1861,7 +1863,7 @@ class CiviCRM_Admin_Utilities_Single {
 
 		// Reports.
 		if ( array_key_exists( 'CiviReport', $components ) ) {
-			if ( $this->check_permission( 'access CiviReport' ) ) {
+			if ( $this->check_permission( 'County Leader' ) ) {
 				$wp_admin_bar->add_node( array(
 					'id'     => 'cau-8',
 					'parent' => $id,
